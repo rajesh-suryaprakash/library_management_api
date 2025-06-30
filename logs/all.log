@@ -1,0 +1,13 @@
+{"level":"info","message":"Swagger API documentation is available at http://localhost:3000/api-docs","timestamp":"2025-06-30T09:06:00.509Z"}
+{"level":"info","message":"Connecting to database...","timestamp":"2025-06-30T09:06:00.525Z"}
+{"level":"info","message":"Database connection established.","timestamp":"2025-06-30T09:06:00.606Z"}
+{"level":"info","message":"Model associations have been successfully set up.","timestamp":"2025-06-30T09:06:00.634Z"}
+{"level":"info","message":"Models synchronized.","timestamp":"2025-06-30T09:06:00.865Z"}
+{"level":"info","message":"Server running on port 3000","timestamp":"2025-06-30T09:06:00.880Z"}
+{"level":"http","message":"::ffff:127.0.0.1 - - [30/Jun/2025:09:06:05 +0000] \"GET / HTTP/1.1\" 200 41 \"https://studio.firebase.google.com/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36\"","timestamp":"2025-06-30T09:06:05.521Z"}
+{"level":"info","message":"Swagger API documentation is available at http://localhost:3000/api-docs","timestamp":"2025-06-30T09:12:22.822Z"}
+{"level":"info","message":"Connecting to database...","timestamp":"2025-06-30T09:12:22.824Z"}
+{"level":"info","message":"Database connection established.","timestamp":"2025-06-30T09:12:22.839Z"}
+{"level":"info","message":"Model associations have been successfully set up.","timestamp":"2025-06-30T09:12:22.851Z"}
+{"level":"info","message":"Models synchronized.","timestamp":"2025-06-30T09:12:22.867Z"}
+{"level":"info","message":"Server running on port 3000","timestamp":"2025-06-30T09:12:22.870Z"}
