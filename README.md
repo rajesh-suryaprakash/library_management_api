@@ -236,7 +236,7 @@ This project is distributed under the MIT License. See the `LICENSE` file in the
 [Rajesh Suryaprakash]
 
 *   Email: rajesh.learning1994@gmail.com
-*   Project Link: https://github.com/YOUR_USERNAME/YOUR_REPO
+*   Project Link: https://github.com/rajesh-suryaprakash/library_management_api.git
 
 ## 📜 Section 9: Document Control
 
