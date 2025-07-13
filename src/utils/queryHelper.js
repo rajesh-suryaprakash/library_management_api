@@ -29,8 +29,7 @@ const parseQuery = (query) => {
       } else {
         // Handle top-level filters for the main model (e.g., Book)
         const [field, op = 'eq'] = key.split('_');
-
-        // --- THIS IS THE COMBINED LOGIC ---
+        // If the field is not a valid operator, default to 'eq'
         // It handles both text and numeric operators correctly.
         switch (op) {
           case 'like':
@@ -53,7 +52,6 @@ const parseQuery = (query) => {
             // Fallback for any other operator
             topLevelWhere[field] = { [Op.eq]: value };
         }
-        // --- END OF COMBINED LOGIC ---
       }
     }
   }
@@ -62,7 +60,7 @@ const parseQuery = (query) => {
     options.where = topLevelWhere;
   }
 
-  // Sorting Logic (no change)
+  // Sorting Logic
   if (query.sort) {
     options.order = query.sort.split(',').map(item => {
       const direction = item.startsWith('-') ? 'DESC' : 'ASC';
@@ -71,7 +69,7 @@ const parseQuery = (query) => {
     });
   }
 
-  // Pagination Logic (no change)
+  // Pagination Logic
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 10;
   options.limit = limit;

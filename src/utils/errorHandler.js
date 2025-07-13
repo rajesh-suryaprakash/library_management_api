@@ -2,45 +2,55 @@
 const logger = require('../config/logger');
 const AppError = require('./AppError');
 
-const handleValidationErrorDB = (err) => {
-  const messages = err.errors.map(el => el.message).join('. ');
-  const message = `Invalid input data. ${messages}`;
-  return new AppError(message, 400);
-};
-
-const handleDuplicateFieldsDB = (err) => {
-  // This regex extracts the value from the error message, e.g., "username must be unique"
-  const value = err.errors[0].message;
-  const message = `Duplicate field value: ${value}. Please use another value.`;
-  return new AppError(message, 409); // 409 Conflict
-};
-
+// Handles JWT errors, such as invalid or expired tokens
 const handleJWTError = () => new AppError('Invalid token. Please log in again.', 401);
 const handleJWTExpiredError = () => new AppError('Your token has expired. Please log in again.', 401);
 
+// Handles Sequelize's specific unique constraint error (e.g., duplicate email)
+const handleDuplicateFieldsDB = (err) => {
+  const field = Object.keys(err.fields)[0];
+  const message = `An account with that ${field} already exists. Please use another value.`;
+  return new AppError(message, 409); // 409 Conflict
+};
+
+// Handles Sequelize's specific validation errors (e.g., password too short, invalid ISBN)
+const handleValidationErrorDB = (err) => {
+  const messages = err.errors.map(el => el.message).join('. ');
+  const message = `Invalid input data: ${messages}`;
+  return new AppError(message, 400);
+};
+
+// Sends detailed errors during development for easy debugging
 const sendErrorDev = (err, res) => {
-  return res.status(err.statusCode).json({
+  logger.error('DEV ERROR 💥', { name: err.name, message: err.message, stack: err.stack });
+  res.status(err.statusCode).json({
     status: err.status,
     error: err,
     message: err.message,
-    stack: err.stack,
+    stack: err.stack
   });
 };
 
+// Sends generic, safe errors in production to avoid leaking details
 const sendErrorProd = (err, res) => {
+  // A) For operational, trusted errors that we created: send the message to the client
   if (err.isOperational) {
     return res.status(err.statusCode).json({
       status: err.status,
-      message: err.message,
+      message: err.message
     });
   }
-  logger.error('PROGRAMMING ERROR 💥', err);
-  return res.status(500).json({
+  // B) For programming or other unknown errors: don't leak details
+  // 1) Log the error for developers
+  logger.error('PRODUCTION ERROR 💥', err);
+  // 2) Send a generic message to the client
+  res.status(500).json({
     status: 'error',
-    message: 'Something went very wrong!',
+    message: 'Something went very wrong!'
   });
 };
 
+// The main error handling middleware that processes all errors
 module.exports = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
