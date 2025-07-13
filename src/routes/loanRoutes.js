@@ -1,62 +1,170 @@
-// src/routes/bookRoutes.js
+// src/routes/loanRoutes.js
 const express = require('express');
-const bookController = require('../controllers/bookControllers.js');
+const loanController = require('../controllers/loanController');
 const { authenticateToken, checkRole } = require('../middleware/authMiddleware');
+const { borrowBookValidationRules, handleValidationErrors } = require('../middleware/validators');
 const router = express.Router();
 
 /**
  * @swagger
  * tags:
- *   name: Books
- *   description: Book inventory management and browsing. All text filters are case-insensitive.
+ *   name: Loans
+ *   description: Managing book loans and returns.
  */
 
-const canRead = [authenticateToken];
-const canManage = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
+const canManageAllLoans = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
 
 /**
  * @swagger
- * /api/v1/books:
- *   get:
- *     summary: Get a list of books with advanced filtering
- *     tags: [Books]
+ * /api/v1/loans:
+ *   post:
+ *     summary: Borrow a book
+ *     tags: [Loans]
  *     description: |
- *       Retrieves a paginated list of books with support for advanced filtering on both book and author attributes.
- *       Accessible to any authenticated user. All text filters are **case-insensitive**.
- *       ### Filter Syntax
- *       Use the format `filter[fieldName_operator]=value`.
- *       - **Top-level filter (on Book):** `?filter[title_like]=Dune`
- *       - **Nested filter (on Author):** `?filter[author.name_like]=Orwell`
- *       ### Supported Operators
- *       - `_eq`: Exact match (default if no operator is provided).
- *       - `_like`: Partial "contains" match.
- *       - `_startsWith`: "Starts with" match.
- *       - `_gt` / `_lt`: Greater/less than (for numbers like `publicationYear`).
+ *       Creates a new loan record for the authenticated member.
+ *       ### Business Rules:
+ *       - A member can have a maximum of **5 active loans** at any given time.
+ *       - A member cannot borrow a book they already have an active loan for.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bookId]
+ *             properties:
+ *               bookId:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+ *     responses:
+ *       201:
+ *         description: Book borrowed successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: 'string' }
+ *                 loan: { $ref: '#/components/schemas/Loan' }
+ *       400:
+ *         description: Bad Request (e.g., missing/invalid bookId, book not available).
+ *       403:
+ *         description: Forbidden - The member has reached the maximum loan limit of 5 books.
+ *       404:
+ *         description: Book or Member profile not found.
+ *       409:
+ *         description: Conflict - This book is already on loan by the member.
+ */
+router.post(
+  '/',
+  authenticateToken,
+  borrowBookValidationRules,
+  handleValidationErrors,
+  loanController.borrowBook
+);
+
+/**
+ * @swagger
+ * /api/v1/loans/{loanId}/return:
+ *   put:
+ *     summary: Return a borrowed book
+ *     tags: [Loans]
+ *     description: |
+ *       Marks a loan as returned and calculates a fine if the return is after the due date.
+ *       ### Fine Calculation Logic:
+ *       - **Days 1-10 late:** Rs. 50 per day.
+ *       - **Days 11-20 late:** Rs. 100 per day for this bracket (total fine will include the first 10 days).
+ *       - **Days 21+ late:** Rs. 200 per day for this bracket (total fine will include the previous brackets).
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: loanId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The ID of the loan to be returned.
+ *     responses:
+ *       200:
+ *         description: Book returned successfully. The message will indicate if a fine was applied.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: 'string', example: 'Book returned successfully. A late fine of Rs. 700 has been applied.' }
+ *                 loan: { $ref: '#/components/schemas/Loan' }
+ *       400:
+ *         description: Bad Request - The book has already been returned.
+ *       403:
+ *         description: Forbidden - User did not borrow this book.
+ *       404:
+ *         description: Loan record not found.
+ */
+router.put('/:loanId/return', authenticateToken, loanController.returnBook);
+
+/**
+ * @swagger
+ * /api/v1/loans/my_loan_history:
+ *   get:
+ *     summary: Get the current user's personal loan history
+ *     tags: [Loans]
+ *     description: Retrieves a list of all past and active loans for the authenticated user.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of the user's loans, or a message if none exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Loan'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "You have no active or past loan history."
+ *       404:
+ *         description: Member profile not found for the user.
+ */
+router.get('/my_loan_history', authenticateToken, loanController.getMyLoans);
+
+/**
+ * @swagger
+ * /api/v1/loans:
+ *   get:
+ *     summary: Get all loans with advanced filtering (Librarian/Admin only)
+ *     tags: [Loans]
+ *     description: |
+ *       Retrieves a paginated list of all loans in the system.
+ *       Supports advanced filtering on loan attributes and related models like Book and User.
+ *       Requires LIBRARIAN or ADMIN role. All text filters are case-insensitive.
+ *       ### Filter Syntax Examples
+ *       - **Filter by Book Title:** `?filter[Book.title_like]=Test`
+ *       - **Filter by Member's Username:** `?filter[User.username_eq]=member_user1`
+ *       - **Filter by returned status:** `?filter[returnDate_eq]=null` (for active loans)
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: filter[title_like]
+ *         name: filter[Book.title_like]
  *         schema: { type: string }
- *         description: "Example for a partial search on a book's title."
- *       # --- THIS IS THE NEWLY ADDED PARAMETER ---
+ *         description: "Filter loans by the title of the borrowed book."
  *       - in: query
- *         name: filter[title_eq]
+ *         name: filter[User.username_eq]
  *         schema: { type: string }
- *         description: "Example for an exact search on a book's title."
- *       # --- END OF ADDITION ---
- *       - in: query
- *         name: filter[author.name_like]
- *         schema: { type: string }
- *         description: "Example for a partial search on the author's name."
- *       - in: query
- *         name: filter[publicationYear_gt]
- *         schema: { type: integer }
- *         description: "Example to find books published after a certain year."
+ *         description: "Filter loans by the username of the member."
  *       - in: query
  *         name: sort
  *         schema: { type: string }
- *         description: "Sort by field. Prefix with '-' for descending. Example: `sort=-publicationYear,title`"
+ *         description: "Sort by field. Example: `sort=-loanDate`"
  *       - in: query
  *         name: page
  *         schema: { type: integer, default: 1 }
@@ -67,150 +175,10 @@ const canManage = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
  *         description: "Number of items per page."
  *     responses:
  *       200:
- *         description: A paginated list of books.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalItems:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 currentPage:
- *                   type: integer
- *                 books:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/BookWithAuthor'
- *       401:
- *         description: Unauthorized.
- */
-router.get('/', canRead, bookController.getAllBooks);
-
-/**
- * @swagger
- * /api/v1/books/{id}:
- *   get:
- *     summary: Get a single book by its ID
- *     tags: [Books]
- *     description: Retrieves details for a single book. Accessible to any authenticated user.
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: The UUID of the book to retrieve.
- *     responses:
- *       200:
- *         description: Detailed information about the book.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/BookWithAuthor'
- *       401:
- *         description: Unauthorized.
- *       404:
- *         description: Book not found.
- */
-router.get('/:id', canRead, bookController.getBookById);
-
-/**
- * @swagger
- * /api/v1/books:
- *   post:
- *     summary: Create a new book (Librarian/Admin only)
- *     tags: [Books]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/NewBook'
- *     responses:
- *       201:
- *         description: Book created successfully.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Book'
- *       400:
- *         description: Bad Request (e.g., missing fields, invalid authorId).
+ *         description: A paginated list of all loans.
  *       403:
  *         description: Forbidden, insufficient permissions.
- *       409:
- *         description: Conflict - a book with this ISBN already exists.
  */
-router.post('/', canManage, bookController.createBook);
-
-/**
- * @swagger
- * /api/v1/books/{id}:
- *   put:
- *     summary: Update a book (Librarian/Admin only)
- *     tags: [Books]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: The UUID of the book to update.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateBook'
- *     responses:
- *       200:
- *         description: Book updated successfully.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Book'
- *       400:
- *         description: Bad Request (e.g., invalid fields).
- *       403:
- *         description: Forbidden, insufficient permissions.
- *       404:
- *         description: Book not found.
- */
-router.put('/:id', canManage, bookController.updateBook);
-
-/**
- * @swagger
- * /api/v1/books/{id}:
- *   delete:
- *     summary: Delete a book (Librarian/Admin only)
- *     tags: [Books]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: The UUID of the book to delete.
- *     responses:
- *       204:
- *         description: Book deleted successfully (No Content).
- *       403:
- *         description: Forbidden, insufficient permissions.
- *       404:
- *         description: Book not found.
- */
-router.delete('/:id', canManage, bookController.deleteBook);
+router.get('/', canManageAllLoans, loanController.getAllLoans);
 
 module.exports = router;
