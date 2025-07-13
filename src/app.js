@@ -1,24 +1,24 @@
 // src/app.js
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
-const setupSwaggerDocs = require('./config/swagger.js');
-const { generalLimiter, authLimiter } = require('./config/rateLimiter.js');
-const logger = require('./config/logger.js');
-const handleErrors = require('./utils/errorHandler.js');
-const AppError = require('./utils/AppError.js');
+const setupSwaggerDocs = require('./config/swagger');
+const { generalLimiter, authLimiter } = require('./config/rateLimiter');
+const logger = require('./config/logger');
+const handleErrors = require('./utils/errorHandler');
+const AppError = require('./utils/AppError');
 
 // Import all route handlers
-const baseRoutes = require('./routes/index.js');
-const authRoutes = require('./routes/auth.js');
-const userRoutes = require('./routes/userRoutes.js');
-const authorRoutes = require('./routes/authorRoutes.js');
-const bookRoutes = require('./routes/bookRoutes.js');
-const loanRoutes = require('./routes/loanRoutes.js');
-const memberRoutes = require('./routes/memberRoutes.js');
+const baseRoutes = require('./routes/index');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/userRoutes');
+const authorRoutes = require('./routes/authorRoutes');
+const bookRoutes = require('./routes/bookRoutes');
+const loanRoutes = require('./routes/loanRoutes');
+const memberRoutes = require('./routes/memberRoutes');
+const healthRoutes = require('./routes/health');
 
 const app = express();
 
@@ -33,6 +33,7 @@ app.use('/api/v1', generalLimiter);
 
 // --- Routes ---
 app.use('/', baseRoutes);
+app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/authors', authorRoutes);
@@ -43,12 +44,10 @@ app.use('/api/v1/members', memberRoutes);
 // Setup Swagger Documentation
 setupSwaggerDocs(app);
 
-// --- THE FIX: Use a more robust catch-all syntax ---
-// This middleware runs if no other route has matched.
-app.all(/^\/.*/, (req, res, next) => {
+app.use((req, res, next) => {
+  // Pass a new AppError to our global error handler.
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
-// --- END OF FIX ---
 
 // --- Global Error Handling Middleware ---
 app.use(handleErrors);
