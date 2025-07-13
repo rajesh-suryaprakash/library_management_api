@@ -1,7 +1,7 @@
 // src/middleware/authMiddleware.js
 
 const jwt = require('jsonwebtoken');
-const logger = require('../config/logger'); // <-- THE FIX: Import the logger
+const logger = require('../config/logger');
 
 // This middleware checks if the user is authenticated and has the required role.
 const authenticateToken = (req, res, next) => {

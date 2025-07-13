@@ -1,7 +1,6 @@
 // src/middleware/validators.js
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 
-// A middleware function to handle validation errors found by express-validator
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -10,31 +9,72 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Define the validation rules for the user registration endpoint
 const registerValidationRules = [
-  // username must not be empty
   body('username')
+    .trim()
     .notEmpty().withMessage('Username is required.')
-    .isLength({ min: 3 }).withMessage('Username must be at least 3 characters long.'),
+    .isLength({ min: 5 }).withMessage('Username must be at least 5 characters long.'),
 
-  // email must be an email
   body('email')
-    .isEmail().withMessage('Please provide a valid email address.'),
+    .isEmail().withMessage('Please provide a valid login email address.')
+    .normalizeEmail(),
 
-  // password must be at least 8 chars long
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.'),
+
+  body('contactEmail')
+    .notEmpty().withMessage('Contact email is required.')
+    .isEmail().withMessage('Please provide a valid contact email address.')
+    .normalizeEmail(),
+
+  body('mobileNumber')
+    .notEmpty().withMessage('Mobile number is required.')
+    .isMobilePhone('any', { strictMode: false }).withMessage('Please provide a valid mobile number.'),
+
+  body('address')
+    .optional({ checkFalsy: true })
+    .trim()
+];
+
+const studentRegistrationValidationRules = [
+  ...registerValidationRules,
+  body('institutionType')
+    .notEmpty().withMessage('institutionType is required for student registration.')
+    .isIn(['SCHOOL', 'COLLEGE']).withMessage('institutionType must be either SCHOOL or COLLEGE.'),
+  body('studentIdCardNumber')
+    .notEmpty().withMessage('studentIdCardNumber is required for student registration.'),
+  body('institutionAddress')
+    .notEmpty().withMessage('institutionAddress is required for student registration.')
+];
+
+const borrowBookValidationRules = [
+  body('bookId')
+    .notEmpty().withMessage('The bookId field is required.')
+    .isUUID(4).withMessage('The bookId must be a valid UUID version 4.')
+];
+
+const forgotPasswordValidationRules = [
+  body('email')
+    .notEmpty().withMessage('Email is required.')
+    .isEmail().withMessage('Please provide a valid email address.')
+];
+
+const resetPasswordValidationRules = [
   body('password')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
 ];
 
-const borrowBookValidationRules = [
-  // Check that bookId is not empty and is a valid UUID
-  body('bookId')
-    .notEmpty().withMessage('The bookId field is required.')
-    .isUUID(4).withMessage('The bookId must be a valid UUID version 4.'),
+const uuidParamValidationRules = (paramName) => [
+  param(paramName)
+    .isUUID(4).withMessage(`The URL parameter '${paramName}' must be a valid UUID version 4.`)
 ];
 
 module.exports = {
   registerValidationRules,
+  studentRegistrationValidationRules,
   borrowBookValidationRules,
+  forgotPasswordValidationRules,
+  resetPasswordValidationRules,
+  uuidParamValidationRules,
   handleValidationErrors
 };

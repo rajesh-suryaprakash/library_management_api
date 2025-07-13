@@ -34,16 +34,27 @@ const User = sequelize.define('User', {
     }
   },
   role: {
-    type: DataTypes.ENUM('MEMBER', 'LIBRARIAN', 'ADMIN'),
+    type: DataTypes.ENUM('MEMBER', 'STUDENT', 'LIBRARIAN', 'ADMIN'),
     allowNull: false,
     defaultValue: 'MEMBER'
+  },
+  passwordResetToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  passwordResetExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'Users',
   timestamps: true,
   hooks: {
-    beforeCreate: async (user) => {
-      if (user.password) {
+    // The 'beforeSave' hook runs on both User.create() and user.save().
+    beforeSave: async (user, options) => {
+      // We only want to hash the password if it has been changed
+      // or if it is a new record.
+      if (user.changed('password')) {
         const saltRounds = 10;
         user.password = await bcrypt.hash(user.password, saltRounds);
       }
