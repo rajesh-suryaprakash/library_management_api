@@ -158,7 +158,6 @@ npm install
 Create a `.env` file in the root of the project and paste the following content into it.
 
 ```
-dotenv
 # Application Configuration
 PORT=3000
 
