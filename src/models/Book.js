@@ -1,7 +1,6 @@
 // src/models/Book.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const { isValidISBN } = require('../utils/customValidators'); // <-- Import our custom validator
 
 const Book = sequelize.define('Book', {
   id: {
@@ -21,17 +20,7 @@ const Book = sequelize.define('Book', {
   isbn: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
-    // --- FIX FOR ISBN VALIDATION ---
-    // We are now using our own robust validator function.
-    validate: {
-      isCustomISBN (value) {
-        if (!isValidISBN(value)) {
-          throw new Error('Please provide a valid ISBN-10 or ISBN-13.');
-        }
-      }
-    }
-    // --- END OF FIX ---
+    unique: true
   },
   publicationYear: {
     type: DataTypes.INTEGER,

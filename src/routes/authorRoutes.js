@@ -11,8 +11,6 @@ const router = express.Router();
  *   description: Author management. All endpoints require LIBRARIAN or ADMIN role. All text filters are case-insensitive.
  */
 
-// --- Middleware setup for route protection ---
-// All author management endpoints will now use the same strict permission set.
 const canManageAuthors = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
 
 /**
@@ -25,10 +23,9 @@ const canManageAuthors = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
  *       Retrieves a paginated list of authors. All text filters are **case-insensitive**.
  *       Requires LIBRARIAN or ADMIN role.
  *       ### Filter Syntax
- *       Use the format `filter[fieldName_operator]=value`. If no operator is supplied, `_eq` (exact match) is assumed.
+ *       Use the format `filter[fieldName_operator]=value`. Default is `_eq`.
  *       - **`_eq`**: Exact match (e.g., `?filter[name_eq]=George Orwell`)
- *       - **`_like`**: Partial "contains" match (e.g., `?filter[name_like]=orwell`)
- *       - **`_startsWith`**: "Starts with" match (e.g., `?filter[name_startsWith]=george`)
+ *       - **`_like`**: Partial "contains" match (e.g., `?filter[language_like]=eng`)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -37,9 +34,9 @@ const canManageAuthors = [authenticateToken, checkRole(['LIBRARIAN', 'ADMIN'])];
  *         schema: { type: string }
  *         description: "Example for a partial search on an author's name."
  *       - in: query
- *         name: filter[name_eq]
+ *         name: filter[language_eq]
  *         schema: { type: string }
- *         description: "Example for an exact search on an author's name."
+ *         description: "Example for an exact search on an author's language."
  *       - in: query
  *         name: sort
  *         schema: { type: string }
@@ -79,7 +76,7 @@ router.get('/', canManageAuthors, authorController.getAllAuthors);
  *         description: The UUID of the author to retrieve.
  *     responses:
  *       200:
- *         description: Author details.
+ *         description: Author details, including the new language field.
  *       403:
  *         description: Forbidden, insufficient permissions.
  *       404:
@@ -103,6 +100,7 @@ router.get('/:id', canManageAuthors, authorController.getAuthorById);
  *             type: object
  *             required:
  *               - name
+ *               - language
  *             properties:
  *               name:
  *                 type: string
@@ -110,9 +108,14 @@ router.get('/:id', canManageAuthors, authorController.getAuthorById);
  *               biography:
  *                 type: string
  *                 example: "English writer, poet, philologist, and academic."
+ *               language:
+ *                 type: string
+ *                 example: "English"
  *     responses:
  *       201:
  *         description: Author created successfully.
+ *       400:
+ *         description: Bad Request (e.g., missing name or language).
  *       403:
  *         description: Forbidden, insufficient permissions.
  *       409:
@@ -147,6 +150,9 @@ router.post('/', canManageAuthors, authorController.createAuthor);
  *                 type: string
  *               biography:
  *                 type: string
+ *               language:
+ *                 type: string
+ *                 example: "English"
  *     responses:
  *       200:
  *         description: Author updated successfully.

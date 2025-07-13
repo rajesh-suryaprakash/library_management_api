@@ -15,6 +15,15 @@ const Author = sequelize.define('Author', {
   },
   biography: {
     type: DataTypes.TEXT
+  },
+  language: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: 'Language cannot be an empty string.'
+      }
+    }
   }
 }, {
   tableName: 'Authors',

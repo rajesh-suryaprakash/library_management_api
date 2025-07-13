@@ -1,6 +1,6 @@
 // src/routes/bookRoutes.js
 const express = require('express');
-const bookController = require('../controllers/bookControllers.js');
+const bookController = require('../controllers/bookController');
 const { authenticateToken, checkRole } = require('../middleware/authMiddleware');
 const router = express.Router();
 
