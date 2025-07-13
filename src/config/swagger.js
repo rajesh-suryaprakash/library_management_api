@@ -98,7 +98,7 @@ const swaggerDefinition = {
           fineAmount: {
             type: 'integer',
             description: 'The calculated fine for a late return, in Rs.',
-            example: 0,
+            example: 0
           },
           memberId: { type: 'string', format: 'uuid' },
           bookId: { type: 'string', format: 'uuid' }
