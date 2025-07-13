@@ -2,14 +2,14 @@
 .git
 .gitignore
 
-# Ignore docker files
+# Ignore docker files and local env
 .dockerignore
 Dockerfile
+.env
 
 # Ignore local dependencies and logs
 node_modules
 npm-debug.log
 logs/
 
-# Ignore local environment file
-.env
+# *.sqlite

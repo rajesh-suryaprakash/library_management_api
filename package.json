@@ -7,7 +7,11 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.js\"",
     "seed": "node src/db/seed.js",
+    "cleanse": "node src/db/cleanseData.js",
+    "enrich:books": "node src/db/enrichBookData.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,6 +27,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "ms": "^2.1.3",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
@@ -32,13 +37,16 @@
   "devDependencies": {
     "@faker-js/faker": "^9.8.0",
     "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.5",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-promise": "^6.6.0",
     "jest": "^30.0.0",
     "mammoth": "^1.9.1",
     "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
     "sequelize-cli": "^6.6.3",
     "supertest": "^7.1.1"
   }
