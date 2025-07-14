@@ -221,7 +221,9 @@ Password for all users: `Password123!`
 |-----------|---------------------|--------------------------------|
 | ADMIN     | admin@library.com   | Full permissions across the entire system. |
 | LIBRARIAN | librarian@library.com | Can manage books, authors, and all members. |
-| MEMBER    | member@library.com  | Can browse books and manage their own loans.|
+| MEMBER    | member1@library.com  | Can browse books and manage their own loans.|
+| VERIFIED Student    | verified_student1@library.com  | Can browse books and manage their own loans.|
+| UNVERIFIED Student    | unverified_student1@library.com  | Can browse books and manage their own loans.|
 
 ### 4.4 ⚙️ Key Business Logic and Application Rules
 
