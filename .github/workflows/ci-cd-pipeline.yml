@@ -1,0 +1,53 @@
+# This name will appear in the "Actions" tab of your GitHub repository.
+name: CI/CD - Build and Push Docker Image
+
+# Controls when the workflow will run.
+on:
+  # Triggers the workflow on push events but only for the "main" or "master" branch.
+  push:
+    branches: [ "main", "master" ]
+  # Also allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel.
+jobs:
+  # This workflow contains a single job called "build-and-push".
+  build-and-push:
+    # The type of virtual machine that the job will run on.
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job.
+    steps:
+      # Step 1: Check out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up the Docker buildx plugin for advanced building capabilities.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Log in to Docker Hub.
+      # This step uses secrets to securely log in without exposing your credentials in the code.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 4: Run the Linter as a quality check before building.
+      # This ensures code quality standards are met.
+      - name: Lint Code
+        run: |
+          npm install
+          npm run lint
+
+      # Step 5: Build the Docker image and push it to Docker Hub.
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/library-api:latest, ${{ secrets.DOCKERHUB_USERNAME }}/library-api:${{ github.sha }}
+          # The 'tags' field creates two versions:
+          # 1. 'latest': Always points to the most recent successful build.
+          # 2. A specific version tag based on the Git commit hash (e.g., ...:a1b2c3d4), which is a best practice for versioning.
