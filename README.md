@@ -110,7 +110,7 @@ This is the easiest and fastest method to get the API running. It does not requi
 Open your terminal and pull the latest image from Docker Hub.
 
 ```bash
-docker pull [your-dockerhub-username]/library-api:latest
+docker pull theeagle94/library-api:latest
 ```
 
 **Step 2: Run the Docker container**
